@@ -299,9 +299,25 @@ class Template {
      * @param   array   $data
      * @return  object  $this
      */
-    public function inject_partial($name, $string)
+    public function inject_partial($name, $string, $data = array())
     {
-        $this->_partials[$name] = array('string' => $string);
+        $this->_partials[$name] = array('string' => $string, 'data' => $data);
+        return $this;
+    }
+
+    // --------------------------------------------------------------------
+
+    /**
+     * Helps build custom breadcrumb trails
+     *
+     * @access  public
+     * @param   string  $name   What will appear as the link text
+     * @param   string  $uri    The URL segment
+     * @return  object  $this
+     */
+    public function set_breadcrumb($name, $uri = '')
+    {
+        $this->_breadcrumbs[] = array('name' => $name, 'uri' => $uri );
         return $this;
     }
 
@@ -348,6 +364,9 @@ class Template {
                 $this->partials[$name] = $partial['string'];
             }
         }
+
+        //add the breadcrumb trails
+        $this->breadcrumbs = $this->_breadcrumbs;
 
         $this->view->set_global('template', $this->_get_fields(), false);
 
