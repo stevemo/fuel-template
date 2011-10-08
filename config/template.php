@@ -20,7 +20,6 @@ return array(
 
 	'title_separator' => ' | ',
 	'theme'           => null,
-	'cache'			  => 'cache',
 	'theme_locations' => array(
 			APPPATH.'themes/'
 		)

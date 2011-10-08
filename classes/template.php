@@ -24,7 +24,9 @@ namespace Template;
 
 class Template {
 
-	private $_theme = NULL;
+	private $_module = NULL;
+
+    private $_theme = NULL;
 	private $_theme_path = NULL;
 	private $_layout = FALSE; // By default, dont wrap the view with anything
 	private $_layout_subdir = ''; // Layouts and partials will exist in views/layouts
@@ -51,6 +53,22 @@ class Template {
     public static function _init()
     {
         \Config::load('template', 'template');
+    }
+
+    /**
+     * Shortcode to self::forge().
+     *
+     * @deprecated  1.1.0
+     * @static
+     * @access  public
+     * @param   array  $custom  array of config
+     * @return  self::forge()
+     */
+    public static function factory($custom = array())
+    {
+        \Log::warning('This method is deprecated. Please use a forge() instead.', __METHOD__);
+
+        return static::forge($custom);
     }
 
     /**
@@ -113,6 +131,11 @@ class Template {
 		{
 			$this->set_theme($this->_theme);
 		}
+
+        //grab the active request
+        $active = \Request::active();
+
+        $this->_module = $active->module;
     }
 
     /**
@@ -246,6 +269,160 @@ class Template {
     {
         $this->view->bind_global($key, &$value, $filter);
         return $this;
+    }
+
+    /**
+     * Build function
+     *
+     **/
+    public function build($file, $data = array())
+    {
+        // Want this file wrapped with a layout file?
+        if($this->_layout)
+        {
+            if($this->_theme_path !== null)
+            {
+                $this->view->set_filename(self::_find_view_folder().'layouts/'.$this->_layout.$this->_ext($this->_layout));
+                $this->body = $this->_find_view($file, $data);
+            }
+            else
+            {
+                throw new \Fuel_Exception('Did you forget to set the theme?');
+            }
+        }
+        else
+        {
+            $view = $this->_find_view($file, $data, false);
+            $this->view->set_filename($view)->set($data);
+        }
+
+        /*TODO
+        * add partials views
+        */
+
+        $this->view->set('template', $this->_get_fields(), false);
+
+        return $this->view;
+    }
+
+    // --------------------------------------------------------------------
+
+    /**
+     * _find_view_folder function
+     *
+     * @access  private
+     * @return  string folder
+     */
+    private function _find_view_folder()
+    {
+
+        // Base view folder
+        $view_folder = APPPATH.'views/';
+
+        // Using a theme? Put the theme path in before the view folder
+        if ( ! empty($this->_theme))
+        {
+            $view_folder = $this->_theme_path.'views/';
+        }
+
+        // Things like views/admin/web/view admin = subdir
+        if ($this->_layout_subdir)
+        {
+            $view_folder .= $this->_layout_subdir.'/';
+        }
+
+        return $view_folder;
+    }
+
+    // --------------------------------------------------------------------
+
+    /**
+     * A module view file can be overriden in a theme
+     *
+     * @access  private
+     * @return  void
+     */
+    private function _find_view($view, array $data, $parse = true)
+    {
+        // Only bother looking in themes if there is a theme
+        if ( ! empty($this->_theme))
+        {
+            foreach ($this->_theme_locations as $location)
+            {
+                $theme_views = array(
+                    $this->_theme.'/views/modules/'.$this->_module .'/'.$view,
+                    $this->_theme.'/views/'.$view
+                );
+
+                foreach ($theme_views as $theme_view)
+                {
+                    if (file_exists($location.$theme_view.$this->_ext($view)))
+                    {
+                        return self::_load_view($theme_view, $data, $location, $parse);
+                    }
+                }
+            }
+        }
+
+        // Not found it yet? Just load, its either in the module or root view
+        return self::_load_view($view, $data, null, $parse);
+    }
+
+    // --------------------------------------------------------------------
+
+    /**
+     * load the view
+     *
+     * @access  private
+     * @return  object view
+     */
+    private function _load_view($view, array $data, $override_view_path = NULL, $parse = true)
+    {
+
+        if($parse)
+        {
+            if ($override_view_path !== NULL)
+            {
+                return \View::forge($override_view_path.$view.$this->_ext($view), $data);
+            }
+
+            // Can just run as usual
+            else
+            {
+                return \View::forge($view, $data);
+            }
+        }
+        else
+        {
+            if ($override_view_path !== NULL)
+            {
+                return $override_view_path.$view.$this->_ext($view);
+            }
+
+            // Can just run as usual
+            else
+            {
+                return $view;
+            }
+        }
+
+    }
+
+    /**
+    * function get_fields
+    * will return only public properties
+    * @access private
+    * @return object
+    */
+    private function _get_fields()
+    {
+        $getFields = function($obj) { return get_object_vars($obj); };
+        return $getFields($this);
+    }
+
+    private function _ext($file)
+    {
+        return pathinfo($file, PATHINFO_EXTENSION) ? '' : '.php';
     }
 }
 
