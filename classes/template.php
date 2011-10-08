@@ -45,6 +45,11 @@ class Template {
 
 	private $_theme_locations = array();
 
+    /**
+     * @var  Theme  $_instance  Singleton instance
+     */
+    protected static $_instance = null;
+
 
     /**
      * Only load the configuration once
@@ -83,22 +88,22 @@ class Template {
      */
     public static function forge($custom = array())
     {
-    	return new static($custom);
+    	$that = new static();
+        $config = \Config::get('template', array());
+        $config = \Arr::merge($config, $custom);
+
+        $that->initialize($config);
+        $that->view = \View::forge();
+
+
+        static::$_instance = $that;
+        return static::$_instance;
     }
 
     /**
-	 * Constructor - Sets Preferences
-	 *
-	 * The constructor can be passed an array of config values
-	 */
-    function __construct($custom = array())
-    {
-    	$config = \Config::get('template', array());
-    	$config = \Arr::merge($config, $custom);
-        $this->initialize($config);
-        $this->view = \View::forge();
-        return $this;
-    }
+     * Prevent instantiation
+     */
+    final private function __construct() {}
 
 	/**
 	 * Initialize preferences
