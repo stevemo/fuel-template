@@ -45,6 +45,11 @@ class Template {
 
 	private $_theme_locations = array();
 
+    /**
+     * @var  Theme  $_instance  Singleton instance
+     */
+    protected static $_instance = null;
+
 
     /**
      * Only load the configuration once
@@ -83,22 +88,25 @@ class Template {
      */
     public static function forge($custom = array())
     {
-    	return new static($custom);
+    	if(static::$_instance == null )
+        {
+            $that = new static();
+            $config = \Config::get('template', array());
+            $config = \Arr::merge($config, $custom);
+
+            $that->initialize($config);
+            $that->view = \View::forge();
+
+            static::$_instance = $that;
+        }
+
+        return static::$_instance;
     }
 
     /**
-	 * Constructor - Sets Preferences
-	 *
-	 * The constructor can be passed an array of config values
-	 */
-    function __construct($custom = array())
-    {
-    	$config = \Config::get('template', array());
-    	$config = \Arr::merge($config, $custom);
-        $this->initialize($config);
-        $this->view = \View::forge();
-        return $this;
-    }
+     * Prevent instantiation
+     */
+    final private function __construct() {}
 
 	/**
 	 * Initialize preferences
@@ -141,6 +149,27 @@ class Template {
         $this->_method = $active->action;
         $this->_controller = str_replace('Controller_','',\Inflector::denamespace($active->controller));
 
+    }
+
+    // --------------------------------------------------------------------
+
+    /**
+     * theme_partial
+     *
+     * @access  public
+     * @param   string $view
+     * @return object View
+     * @author Steve Montambeault
+     **/
+    public static function theme_partial($view)
+    {
+        if(static::$_instance == null)
+        {
+            return;
+        }
+
+        $that = static::$_instance;
+        return \View::forge($that->_theme_path.'views/partials/'.$view.$that->_ext($view));
     }
 
     /**
