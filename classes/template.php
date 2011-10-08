@@ -271,6 +271,42 @@ class Template {
         return $this;
     }
 
+    // --------------------------------------------------------------------
+
+    /**
+     * Set a view partial
+     *
+     * @access  public
+     * @param   string
+     * @param   string
+     * @param   boolean
+     * @return  void
+     */
+    public function set_partial($name, $view, $data = array())
+    {
+        $this->_partials[$name] = array('view' => $view, 'data' => $data);
+        return $this;
+    }
+
+    // --------------------------------------------------------------------
+
+    /**
+     * Set a view partial
+     *
+     * @access  public
+     * @param   string  $name
+     * @param   string  $string
+     * @param   array   $data
+     * @return  object  $this
+     */
+    public function inject_partial($name, $string)
+    {
+        $this->_partials[$name] = array('string' => $string);
+        return $this;
+    }
+
+    // --------------------------------------------------------------------
+
     /**
      * Build function
      *
@@ -296,11 +332,24 @@ class Template {
             $this->view->set_filename($view)->set($data);
         }
 
-        /*TODO
-        * add partials views
-        */
+        //add partials view
+        foreach ($this->_partials as $name => $partial)
+        {
+            // We can only work with data arrays
+            is_array($partial['data']) OR $partial['data'] = (array) $partial['data'];
 
-        $this->view->set('template', $this->_get_fields(), false);
+            // If it uses a view, load it
+            if (isset($partial['view']))
+            {
+                $this->partials[$name] = $this->_find_view($partial['view'], $partial['data']);
+            }
+            else // Otherwise the partial must be a string
+            {
+                $this->partials[$name] = $partial['string'];
+            }
+        }
+
+        $this->view->set_global('template', $this->_get_fields(), false);
 
         return $this->view;
     }
