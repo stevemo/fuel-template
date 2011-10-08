@@ -434,15 +434,6 @@ class Template {
             $this->view->set_filename($view)->set($data);
         }
 
-        if (empty($this->_title))
-        {
-            $this->title = $this->_guess_title();
-        }
-        else
-        {
-            $this->title = $this->_title;
-        }
-
         //add partials view
         foreach ($this->_partials as $name => $partial)
         {
@@ -460,8 +451,21 @@ class Template {
             }
         }
 
-        //add the breadcrumb trails
+        //set the breadcrumb trails
         $this->breadcrumbs = $this->_breadcrumbs;
+
+        // set the title
+        if (empty($this->_title))
+        {
+            $this->title = $this->_guess_title();
+        }
+        else
+        {
+            $this->title = $this->_title;
+        }
+
+        //set the metadata
+        $this->metadata = implode("\n\t\t", $this->_metadata);
 
         $this->view->set_global('template', $this->_get_fields(), false);
 
