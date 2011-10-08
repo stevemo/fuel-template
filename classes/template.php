@@ -324,6 +324,25 @@ class Template {
     // --------------------------------------------------------------------
 
     /**
+     * Set the title of the page
+     *
+     * @access  public
+     * @return  object  $this
+     */
+    public function title()
+    {
+        // If we have some segments passed
+        if ($title_segments =& func_get_args())
+        {
+            $this->_title = implode($this->_title_separator, $title_segments);
+        }
+
+        return $this;
+    }
+
+    // --------------------------------------------------------------------
+
+    /**
      * Build function
      *
      **/
