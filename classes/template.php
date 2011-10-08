@@ -345,6 +345,68 @@ class Template {
         return $this;
     }
 
+    /**
+     * Put extra javascipt, css, meta tags, etc before all other head data
+     *
+     * @access  public
+     * @param   string  $line   The line being added to head
+     * @return  object  $this
+     */
+    public function prepend_metadata($line)
+    {
+        array_unshift($this->_metadata, $line);
+        return $this;
+    }
+
+
+    /**
+     * Put extra javascipt, css, meta tags, etc after other head data
+     *
+     * @access  public
+     * @param   string  $line   The line being added to head
+     * @return  object  $this
+     */
+    public function append_metadata($line)
+    {
+        $this->_metadata[] = $line;
+        return $this;
+    }
+
+
+    /**
+     * Set metadata for output later
+     *
+     * @access  public
+     * @param   string  $name       keywords, description, etc
+     * @param   string  $content    The content of meta data
+     * @param   string  $type       Meta-data comes in a few types, links for example
+     * @return  object  $this
+     */
+    public function set_metadata($name, $content, $type = 'meta')
+    {
+        $name = htmlspecialchars(strip_tags($name));
+        $content = htmlspecialchars(strip_tags($content));
+
+        // Keywords with no comments? ARG! comment them
+        if ($name == 'keywords' AND ! strpos($content, ','))
+        {
+            $content = preg_replace('/[\s]+/', ', ', trim($content));
+        }
+
+        switch($type)
+        {
+            case 'meta':
+                $this->_metadata[$name] = '<meta name="'.$name.'" content="'.$content.'" />';
+            break;
+
+            case 'link':
+                $this->_metadata[$content] = '<link rel="'.$name.'" href="'.$content.'" />';
+            break;
+        }
+
+        return $this;
+    }
+
     // --------------------------------------------------------------------
 
     /**
@@ -372,15 +434,6 @@ class Template {
             $this->view->set_filename($view)->set($data);
         }
 
-        if (empty($this->_title))
-        {
-            $this->title = $this->_guess_title();
-        }
-        else
-        {
-            $this->title = $this->_title;
-        }
-
         //add partials view
         foreach ($this->_partials as $name => $partial)
         {
@@ -398,8 +451,21 @@ class Template {
             }
         }
 
-        //add the breadcrumb trails
+        //set the breadcrumb trails
         $this->breadcrumbs = $this->_breadcrumbs;
+
+        // set the title
+        if (empty($this->_title))
+        {
+            $this->title = $this->_guess_title();
+        }
+        else
+        {
+            $this->title = $this->_title;
+        }
+
+        //set the metadata
+        $this->metadata = implode("\n\t\t", $this->_metadata);
 
         $this->view->set_global('template', $this->_get_fields(), false);
 
