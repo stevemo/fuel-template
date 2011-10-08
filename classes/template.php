@@ -88,15 +88,18 @@ class Template {
      */
     public static function forge($custom = array())
     {
-    	$that = new static();
-        $config = \Config::get('template', array());
-        $config = \Arr::merge($config, $custom);
+    	if(static::$_instance == null )
+        {
+            $that = new static();
+            $config = \Config::get('template', array());
+            $config = \Arr::merge($config, $custom);
 
-        $that->initialize($config);
-        $that->view = \View::forge();
+            $that->initialize($config);
+            $that->view = \View::forge();
 
+            static::$_instance = $that;
+        }
 
-        static::$_instance = $that;
         return static::$_instance;
     }
 
@@ -146,6 +149,27 @@ class Template {
         $this->_method = $active->action;
         $this->_controller = str_replace('Controller_','',\Inflector::denamespace($active->controller));
 
+    }
+
+    // --------------------------------------------------------------------
+
+    /**
+     * theme_partial
+     *
+     * @access  public
+     * @param   string $view
+     * @return object View
+     * @author Steve Montambeault
+     **/
+    public static function theme_partial($view)
+    {
+        if(static::$_instance == null)
+        {
+            return;
+        }
+
+        $that = static::$_instance;
+        return \View::forge($that->_theme_path.'views/partials/'.$view.$that->_ext($view));
     }
 
     /**
