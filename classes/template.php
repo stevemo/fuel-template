@@ -24,7 +24,9 @@ namespace Template;
 
 class Template {
 
-	private $_module = NULL;
+    private $_module = '';
+    private $_controller = '';
+    private $_method = '';
 
     private $_theme = NULL;
 	private $_theme_path = NULL;
@@ -136,6 +138,9 @@ class Template {
         $active = \Request::active();
 
         $this->_module = $active->module;
+        $this->_method = $active->action;
+        $this->_controller = str_replace('Controller_','',\Inflector::denamespace($active->controller));
+
     }
 
     /**
@@ -367,6 +372,15 @@ class Template {
             $this->view->set_filename($view)->set($data);
         }
 
+        if (empty($this->_title))
+        {
+            $this->title = $this->_guess_title();
+        }
+        else
+        {
+            $this->title = $this->_title;
+        }
+
         //add partials view
         foreach ($this->_partials as $name => $partial)
         {
@@ -505,6 +519,42 @@ class Template {
     {
         $getFields = function($obj) { return get_object_vars($obj); };
         return $getFields($this);
+    }
+
+    /**
+    * function _guess_title
+    *
+    * @access private
+    * @return string
+    */
+    private function _guess_title()
+    {
+
+        // Obviously no title, lets get making one
+        $title_parts = array();
+
+        // If the method is something other than index, use that
+        if ($this->_method != 'index')
+        {
+            $title_parts[] = $this->_method;
+        }
+
+        // Make sure controller name is not the same as the method name
+        if ( ! in_array($this->_controller, $title_parts))
+        {
+            $title_parts[] = $this->_controller;
+        }
+
+        // Is there a module? Make sure it is not named the same as the method or controller
+        if ( ! empty($this->_module) AND !in_array($this->_module, $title_parts))
+        {
+            $title_parts[] = $this->_module;
+        }
+
+        // Glue the title pieces together using the title separator setting
+        $title = \Inflector::humanize(implode($this->_title_separator, $title_parts));
+
+        return $title;
     }
 
     private function _ext($file)
