@@ -363,12 +363,12 @@ class Template {
      * @access  public
      * @return  object  $this
      */
-    public function title()
+    public function title($title_segments)
     {
         // If we have some segments passed
-        if ($title_segments =& func_get_args())
+        if ($title_segments)
         {
-            $this->_title = implode($this->_title_separator, $title_segments);
+            $this->_title =  $title_segments;
         }
 
         return $this;
